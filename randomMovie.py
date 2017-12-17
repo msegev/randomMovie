@@ -8,12 +8,12 @@ import random
 #print(json.dumps(x1, sort_keys=True,indent=4))
 
 #request all the different kind of movie genres
-r2 = requests.get('https://api.themoviedb.org/3/genre/movie/list?api_key=2c9691fb28a58afab362019fda8a2bc9&language=en-US')
-x2 = json.loads(r2.text) #convert the server response to json object
+genreRequest = requests.get('https://api.themoviedb.org/3/genre/movie/list?api_key=2c9691fb28a58afab362019fda8a2bc9&language=en-US')
+genreResponseJson = json.loads(genreRequest.text) #convert the server response to json object
 #print(json.dumps(x2, sort_keys=True,indent=4))
 labelOptions = []
-for each in x2["genres"]:
-	labelOptions.append(each["name"]) #create list of genres from json
+for genres in genreResponseJson["genres"]:
+	labelOptions.append(genres["name"]) #create list of genres from json
 
 app=gui("Movie Wizard", "600x200")
 
@@ -31,36 +31,40 @@ genreId = ""
 def pressGo(button):
 	print("Looking for " + app.getOptionBox("Choose a genre: "))
 	#discover movies of the dropdown genre
-	 #convert the server response to json object
+	#convert the server response to json object
 	
-	for each in x2["genres"]:
-		if each["name"] == app.getOptionBox("Choose a genre: "):
-			genreId = str(each["id"])
-			r3 = requests.get('https://api.themoviedb.org/3/discover/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&with_genres=' + genreId)
-			x3 = json.loads(r3.text)			
-			#print(json.dumps(x3, sort_keys=True,indent=4))
+	#todo: make a dictionary of genre name as key and id as value in previous for loop
+	for genres in genreResponseJson["genres"]:
+		if genres["name"] == app.getOptionBox("Choose a genre: "):
+			genreId = str(genres["id"])
+			movieRequest = requests.get('https://api.themoviedb.org/3/discover/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&with_genres=' + genreId)
+			movieResponseJson = json.loads(movieRequest.text)			
+			#print(json.dumps(movieResponseJson, sort_keys=True,indent=4))
 			break
 
 	# choose a random page number
-	totalPages = x3["total_pages"]
+	totalPages = movieResponseJson["total_pages"]
 	randomPageNum = random.randrange(1,totalPages,1)
+
+	print("Number of Pages: " + str(totalPages))
+	print("Selected Random Page: " + str(randomPageNum))
 	
 	# make a new request to get the results from the randomly selected page
-	r4 = requests.get('https://api.themoviedb.org/3/discover/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&with_genres=' + genreId + '&page=' + str(randomPageNum))
-	x4 = json.loads(r4.text)
-	print(json.dumps(x4, sort_keys=True,indent=4))
+	moviePageRequest = requests.get('https://api.themoviedb.org/3/discover/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&with_genres=' + genreId + '&page=' + str(randomPageNum))
+	moviePageResponseJson = json.loads(moviePageRequest.text)
+	#print(json.dumps(moviePageResponseJson, sort_keys=True,indent=4))
 
 	# take a random entry from the results
-	resultsLength = len(x4["results"]) # get length of results
-	print("Results length: " + str(resultsLength))
+	resultsLength = len(moviePageResponseJson["results"]) # get length of results
+	print("Number of Movie Results on This Page: " + str(resultsLength))
 
 	randomEntry = random.randrange(0,resultsLength-1,1)
 	print("Random Entry: " + str(randomEntry))
 
-	print(json.dumps(x4["results"][randomEntry], sort_keys=True,indent=4))
+	print(json.dumps(moviePageResponseJson["results"][randomEntry], sort_keys=True,indent=4))
 
 	# get the title of the randomly selected movie
-	movieTitle = x4["results"][randomEntry]["title"]
+	movieTitle = moviePageResponseJson["results"][randomEntry]["title"]
 	print("Movie title: " + movieTitle)
 
 	# change the label to display movie title
