@@ -3,43 +3,48 @@ import requests
 import json
 import random
 
-#r1 = requests.get('https://api.themoviedb.org/3/search/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&query=fight+club')
-#x1 = json.loads(r1.text)
-#print(json.dumps(x1, sort_keys=True,indent=4))
+#useful constant strings
+movieDbApiUrl = 'https://api.themoviedb.org/3/'
+movieDbApiKey = '?api_key=2c9691fb28a58afab362019fda8a2bc9'
 
-#request all the different kind of movie genres
-genreRequest = requests.get('https://api.themoviedb.org/3/genre/movie/list?api_key=2c9691fb28a58afab362019fda8a2bc9&language=en-US')
-genreResponseJson = json.loads(genreRequest.text) #convert the server response to json object
-#print(json.dumps(x2, sort_keys=True,indent=4))
-labelOptions = []
-for genres in genreResponseJson["genres"]:
-	labelOptions.append(genres["name"]) #create list of genres from json
+def getAllMovieGenres():
+	response = requests.get(movieDbApiUrl + 'genre/movie/list' + movieDbApiKey + '&language=en-US')
+	#convert the server response to json object
+	genreResponseJson = json.loads(response.text)
+	return genreResponseJson
+def getMoviesByGenreId(genreId):
+	response = requests.get(movieDbApiUrl + 'discover/movie' + movieDbApiKey + '&with_genres=' + genreId)
+	movieResponseJson = json.loads(response.text)			
+	#print(json.dumps(movieResponseJson, sort_keys=True,indent=4))
+	return movieResponseJson
 
 app=gui("Movie Wizard", "600x200")
-
-
 app.addLabel("mylabel", "Welcome to Movie Wizard")
-# app.setLabelBg("mylabel", "blue")
-app.setFont(18)
+
+#request all the different kind of movie genres
+genresJson = getAllMovieGenres()
+
+#create list of genres from json
+labelOptions = []
+for genre in genresJson["genres"]:
+	labelOptions.append(genre["name"]) 
 
 # drop down menu made from list of genres from the moviedb.org
+app.setFont(18)
 app.addLabelOptionBox("Choose a genre: ", labelOptions)
-# go button
 
+# go button
 genreId = ""
 
 def pressGo(button):
 	print("Looking for " + app.getOptionBox("Choose a genre: "))
 	#discover movies of the dropdown genre
-	#convert the server response to json object
 	
 	#todo: make a dictionary of genre name as key and id as value in previous for loop
-	for genres in genreResponseJson["genres"]:
-		if genres["name"] == app.getOptionBox("Choose a genre: "):
-			genreId = str(genres["id"])
-			movieRequest = requests.get('https://api.themoviedb.org/3/discover/movie?api_key=2c9691fb28a58afab362019fda8a2bc9&with_genres=' + genreId)
-			movieResponseJson = json.loads(movieRequest.text)			
-			#print(json.dumps(movieResponseJson, sort_keys=True,indent=4))
+	for genre in genresJson["genres"]:
+		if genre["name"] == app.getOptionBox("Choose a genre: "):
+			genreId = str(genre["id"])
+			movieResponseJson = getMoviesByGenreId(genreId)
 			break
 
 	# choose a random page number
